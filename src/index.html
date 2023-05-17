@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>live chat application</title>
+
+    <!-- we do not have to link server javascript file -->
+
+    <link rel="stylesheet" href="index.css">
+</head>
+
+<body>
+    <nav>
+        <div class="logo">
+            <img src="images.png" alt="whastapp logo" id="logo">
+        </div>
+        <div class="heading">
+            <h1>CHAT APP</h1>
+        </div>
+        <div id="totalusers">
+            <!-- <h2 id="totalusers">users</h2>  -->
+            <h1 id="total">total</h1>
+        </div>
+    </nav>
+    <div class="container">
+        <div class="box1">
+            <div id="left" class="message">
+                <h2 id="headingh2"></h2>
+            </div>
+            <div id="right" class="message">
+                <h2 id="headingh3"></h2>
+            </div>
+        </div>
+    </div>
+    <div class="box2">
+        <form action="#" class="sendmessage">
+            <input type="text" class="textarea" id="messageip" placeholder="enter your text">
+            <button class="btn" type="submit">send</button>
+        </form>
+    </div>
+    <script src="socket.io/socket.io.js"></script>
+    <script>
+
+        const messagecontainer = document.querySelector(".container");
+        const form = document.getElementsByClassName("sendmessage");
+        const messageinput = document.getElementById("messageip");
+        const audio = new Audio('ting.mp3');
+        const total = document.getElementById("total");
+
+        const append = (message1, position, online1) => {
+            const messageElement = document.createElement('div');
+            messageElement.innerText = message1;
+            messageElement.classList.add('message');
+
+            messageElement.id = `${position}`;
+            messageElement.classList.add(`${online1}`);
+            const classes = messageElement.className;
+            // console.log(`messageelement.id ${messageElement.id}`);
+            // console.log(`messageelement.iclasslist ${classes}`);
+
+            messagecontainer.append(messageElement);
+            if (position == 'left') {
+                audio.play();
+            }
+
+            if (position == 'middle') {
+                audio.play();
+            }
+        }
+
+        const socket = io();
+        const user = prompt("enter your name to join");
+        // socket.on('new-user-joined', user);
+
+        socket.on("connect", (name) => {
+            // console.log(socket.id);
+            name = user
+            socket.emit('message', "hey from client");
+            socket.emit('new-user-joined', user);
+
+            socket.on('old', data => {
+                total.innerText = data + 1;
+            })
+            socket.on('old-user-joined', data => {
+                append(`${data.user1} joined the chat`, 'middle', 'online');
+                total.innerText = data.totalnumber;
+            })
+
+            // form.addEventListener('submit',(e)=>{
+            //     e.preventDefault();
+            //     const message=messageInput.value;
+            //     append(`you: ${message}`,`right`);
+            //     socket.emit('send',message);
+            //     messgeInput.value='';
+            // })
+
+            console.log("message is printed2");
+            console.log(form);
+            Array.from(form).forEach(element => {
+                element.addEventListener("submit", (e) => {
+                    e.preventDefault();
+                    // console.log(messageinput);
+                    const message2 = messageinput.value;
+                    append(`you: ${message2}`, `right`, 'online');
+                    socket.emit('send', message2);
+                    messageinput.value = ' ';
+                })
+            });
+
+            socket.on('receive', data => {
+                append(`${data.user}: ${data.message}`, 'left', 'online');
+            })
+            socket.on('disconnectuser', message => {
+                append(`${message.message} left the chat`, 'middle', 'offline');
+                let totalnumbers = message.totalnumber;
+                total.innerText = totalnumbers;
+            })
+        })
+    </script>
+</body>
+
+</html>
